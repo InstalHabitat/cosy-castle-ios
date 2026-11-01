@@ -1,6 +1,5 @@
 # Cosy Castle — iOS build on Codemagic (cloud Mac). Flat repo layout.
-# Requires an App Store Connect integration named "CosyCastle_ASC"
-# (Codemagic → Team settings → Integrations → App Store Connect → add API key).
+# Uses the App Store Connect integration named "CosyCastle_ASC".
 workflows:
   ios-capacitor:
     name: Cosy Castle iOS
@@ -15,6 +14,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.cosycastle.app"
       node: 20
       xcode: latest
       cocoapods: default
@@ -29,7 +29,16 @@ workflows:
         script: npx capacitor-assets generate --ios --assetPath . --iconBackgroundColor '#FB4E00' --splashBackgroundColor '#FB4E00' || true
       - name: Capacitor sync
         script: npx cap sync ios
-      - name: Set up code signing
+      - name: Initialize keychain
+        script: keychain initialize
+      - name: Fetch/create signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+      - name: Use provisioning profiles
         script: xcode-project use-profiles
       - name: Build ipa
         script: |
@@ -38,6 +47,7 @@ workflows:
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
