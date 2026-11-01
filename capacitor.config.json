@@ -1,0 +1,20 @@
+{
+  "appId": "com.cosycastle.app",
+  "appName": "Cosy Castle",
+  "webDir": "www",
+  "server": {
+    "url": "https://cosy-castle.netlify.app",
+    "cleartext": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#FB4E00"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#FB4E00",
+      "showSpinner": false
+    }
+  }
+}

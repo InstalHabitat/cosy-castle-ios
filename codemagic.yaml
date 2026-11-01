@@ -1,0 +1,40 @@
+# Cosy Castle — iOS build on Codemagic (cloud Mac). Flat repo layout.
+workflows:
+  ios-capacitor:
+    name: Cosy Castle iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.cosycastle.app
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Prepare web dir
+        script: mkdir -p www && cp index.html www/index.html
+      - name: Install dependencies
+        script: npm install
+      - name: Add iOS platform
+        script: npx cap add ios || true
+      - name: Generate icons & splash
+        script: npx capacitor-assets generate --ios --assetPath . --iconBackgroundColor '#FB4E00' --splashBackgroundColor '#FB4E00' || true
+      - name: Capacitor sync
+        script: npx cap sync ios
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
