@@ -1,6 +1,7 @@
 # Cosy Castle — iOS build on Codemagic (cloud Mac). Flat repo layout.
-# Automatic signing: fetch-signing-files --create generates the distribution
-# certificate (+ private key) and the provisioning profile via "CosyCastle_ASC".
+# Manual signing: creates the distribution certificate (+ key) and the
+# provisioning profile via the "CosyCastle_ASC" App Store Connect integration,
+# then forces the bundle id and applies the profile to the Xcode project.
 workflows:
   ios-capacitor:
     name: Cosy Castle iOS
@@ -27,6 +28,12 @@ workflows:
         script: npx capacitor-assets generate --ios --assetPath . --iconBackgroundColor '#FB4E00' --splashBackgroundColor '#FB4E00' || true
       - name: Capacitor sync
         script: npx cap sync ios
+      - name: Install CocoaPods
+        script: cd ios/App && pod install
+      - name: Force bundle identifier
+        script: |
+          cd ios/App
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
       - name: Set up code signing (create cert + profile)
         script: |
           keychain initialize
@@ -34,7 +41,7 @@ workflows:
             --type IOS_APP_STORE \
             --create
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --warn-only
       - name: Build ipa
         script: |
           xcode-project build-ipa \
